@@ -20,4 +20,3 @@ A simple voice-controlled assistant with a graphical interface built using Pytho
 - **pywhatkit** (YouTube search & playback)  
 - **Wikipedia API**  
 - **pyjokes** (Jokes API) 
-
