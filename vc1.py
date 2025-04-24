@@ -9,6 +9,8 @@ import pywhatkit
 import datetime
 import wikipedia
 import pyjokes
+import webbrowser
+import requests
 
 listener = sr.Recognizer()
 
@@ -50,6 +52,25 @@ def recognize_speech():
             text_area.insert(tk.END, 'Error occurred.\n')
             talk('An error occurred while processing your request.')
 
+def get_weather(city):
+    API_KEY = "your_openweathermap_api_key"  # Replace with your key
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
+
+    try:
+        response = requests.get(url)
+        data = response.json()
+
+        if data.get("cod") != 200:
+            return f"Sorry, I couldn't find weather info for '{city}'."
+
+        temp = data['main']['temp']
+        description = data['weather'][0]['description'].capitalize()
+        return f"The weather in {city.title()} is {description} with a temperature of {temp}°C."
+    
+    except Exception as e:
+        print("Weather API error:", e)
+        return "Unable to fetch weather data at the moment."
+
 def process_command(command):
     text_area.insert(tk.END, 'Processing command...\n')
     if 'play' in command:
@@ -59,6 +80,7 @@ def process_command(command):
     elif 'time' in command:
         current_time = datetime.datetime.now().strftime('%I:%M %p')
         talk('Current time is ' + current_time)
+        print(current_time)
     elif 'who is' in command:
         person = command.replace('who is', '').strip()
         try:
@@ -80,8 +102,34 @@ def process_command(command):
     elif 'bye' in command or 'goodbye' in command:
         talk('Goodbye!')
         window.quit()
-    else:
-        talk('Please say the command again.')
+    if 'open' in command and 'website' in command:
+        talk("Which website should I open?")
+        text_area.insert(tk.END, "Ask: Which website?\n")
+    elif 'open' in command:
+        website = command.replace('open', '').strip().replace(' ', '')
+        if not website.startswith("http"):
+            website = "https://" + website
+        talk(f"Opening {website}")
+        webbrowser.open(website)
+    elif 'weather in' in command:
+        city = command.split('weather in')[-1].strip()
+        if city:
+            weather_report = get_weather(city)
+            talk(weather_report)
+            text_area.insert(tk.END, weather_report + '\n')
+        else:
+            talk("Please specify a city.")
+
+    elif 'calculate' in command:
+        try:
+            expression = command.replace('calculate', '').strip()
+            result = eval(expression)
+            talk(f"The result is {result}")
+            text_area.insert(tk.END, f"Calculation: {result}\n")
+            print(result)
+        except:
+            talk("Sorry, I couldn't calculate that.")
+            text_area.insert(tk.END, "Error in calculation.\n")
 
 def on_click():
     text_area.insert(tk.END, 'Button clicked...\n')
@@ -95,6 +143,17 @@ text_area.pack(padx=10, pady=10)
 
 button = tk.Button(window, text='Start Listening', command=on_click)
 button.pack(pady=5)
+
+entry = tk.Entry(window, width=30)
+entry.pack(pady=5)
+
+def handle_text_command():
+    command = entry.get().lower()
+    text_area.insert(tk.END, 'You typed: ' + command + '\n')
+    process_command(command)
+
+text_button = tk.Button(window, text='Run Command', command=handle_text_command)
+text_button.pack(pady=5)
 
 def test_voice():
     talk("How do i sound?")
